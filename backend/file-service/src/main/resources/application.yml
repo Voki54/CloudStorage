@@ -1,0 +1,12 @@
+server:
+  port: ${FILE_SERVICE_PORT}
+
+spring:
+  application:
+    name: file-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

@@ -1,0 +1,42 @@
+services:
+  postgres:
+      image: postgres:15
+      container_name: postgres
+      restart: always
+      environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DB}
+      ports:
+        - "5432:${POSTGRES_PORT}"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+
+  file-service:
+    build:
+      context: .
+      dockerfile: backend/file-service/Dockerfile
+    env_file:
+      - .env
+    image: file-service:local
+    container_name: file-service
+    depends_on:
+      - postgres
+    ports:
+      - "8081:${FILE_SERVICE_PORT}"
+
+  directory-service:
+    build:
+      context: .
+      dockerfile: backend/directory-service/Dockerfile
+    env_file:
+      - .env
+    image: directory-service:local
+    container_name: directory-service
+    depends_on:
+      - postgres
+    ports:
+      - "8082:${DIRECTORY_SERVICE_PORT}"
+
+volumes:
+  postgres_data:

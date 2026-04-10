@@ -1,0 +1,9 @@
+.git
+**/target/
+**/*.log
+**/node_modules/
+Dockerfile*
+docker-compose*
+README.md
+.gitignore
+.env
