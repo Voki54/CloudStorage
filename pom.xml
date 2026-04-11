@@ -12,6 +12,7 @@
     <modules>
         <module>backend/file-service</module>
         <module>backend/directory-service</module>
+        <module>backend/user-service</module>
     </modules>
 
     <properties>
