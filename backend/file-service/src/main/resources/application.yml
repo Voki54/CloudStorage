@@ -1,9 +1,30 @@
 server:
-  port: ${FILE_SERVICE_PORT}
+  port: 8081
+#  port: ${FILE_SERVICE_PORT}
 
 spring:
   application:
     name: file-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/cloud-storage
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+storage:
+  type: s3
+  s3:
+    endpoint: http://localhost:9000       # MinIO endpoint
+    region: ru-central1-a
+    access-key: cloud_storage             # Есть в .env
+    secret-key: cloud_storage123          # Есть в .env
+    bucket: cloud-storage
+    path-style-access: true                # Обязательно для MinIO и Yandex
+
 
 management:
   endpoints:

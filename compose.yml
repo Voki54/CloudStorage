@@ -63,45 +63,45 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
 
-  file-service:
-    build:
-      context: .
-      dockerfile: backend/file-service/Dockerfile
-    env_file:
-      - .env
-    image: file-service:local
-    container_name: file-service
-    depends_on:
-      - postgres
-      - minio
-    ports:
-      - "${FILE_SERVICE_PORT}:8081"
-
-  directory-service:
-    build:
-      context: .
-      dockerfile: backend/directory-service/Dockerfile
-    env_file:
-      - .env
-    image: directory-service:local
-    container_name: directory-service
-    depends_on:
-      - postgres
-    ports:
-      - "${DIRECTORY_SERVICE_PORT}:8082"
-
-  user-service:
-    build:
-      context: .
-      dockerfile: backend/user-service/Dockerfile
-    env_file:
-      - .env
-    image: user-service:local
-    container_name: user-service
-    depends_on:
-      - postgres
-    ports:
-      - "${USER_SERVICE_PORT}:8083"
+#  file-service:
+#    build:
+#      context: .
+#      dockerfile: backend/file-service/Dockerfile
+#    env_file:
+#      - .env
+#    image: file-service:local
+#    container_name: file-service
+#    depends_on:
+#      - postgres
+#      - minio
+#    ports:
+#      - "${FILE_SERVICE_PORT}:8081"
+#
+#  directory-service:
+#    build:
+#      context: .
+#      dockerfile: backend/directory-service/Dockerfile
+#    env_file:
+#      - .env
+#    image: directory-service:local
+#    container_name: directory-service
+#    depends_on:
+#      - postgres
+#    ports:
+#      - "${DIRECTORY_SERVICE_PORT}:8082"
+#
+#  user-service:
+#    build:
+#      context: .
+#      dockerfile: backend/user-service/Dockerfile
+#    env_file:
+#      - .env
+#    image: user-service:local
+#    container_name: user-service
+#    depends_on:
+#      - postgres
+#    ports:
+#      - "${USER_SERVICE_PORT}:8083"
 
 volumes:
   postgres_data:
