@@ -6,10 +6,11 @@ services:
       environment:
         POSTGRES_USER: ${POSTGRES_USER}
         POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-        POSTGRES_DB: ${POSTGRES_DB}
+#        POSTGRES_DB: ${POSTGRES_DB}
       ports:
         - "${POSTGRES_PORT}:5432"
       volumes:
+        - ./infrastructure/postgres/init-db:/docker-entrypoint-initdb.d
         - postgres_data:/var/lib/postgresql/data
 
   minio:
@@ -29,20 +30,22 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.5.7
     container_name: keycloak
-    command: start-dev
+    command: start-dev --import-realm
     environment:
-      KEYCLOAK_ADMIN: admin #
-      KEYCLOAK_ADMIN_PASSWORD: admin #
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      KC_DB_USERNAME: ${POSTGRES_USER}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${KEYCLOAK_POSTGRES_DB}
+      KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
 
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
     ports:
       - "8080:8080" #
+    volumes:
+      - ./infrastructure/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     depends_on:
       - postgres
 
@@ -103,7 +106,21 @@ services:
 #    ports:
 #      - "${USER_SERVICE_PORT}:8083"
 
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   minio_data:
   frontend_node_modules:
+  pgadmin-data:
