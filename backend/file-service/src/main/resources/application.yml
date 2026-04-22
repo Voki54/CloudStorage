@@ -15,6 +15,33 @@ spring:
       max-file-size: 20MB
       max-request-size: 20MB
 
+  datasource:
+    #    Todo Исчпользовать переменные окружения
+
+    # for docker
+#    url: jdbc:postgresql://postgres:5432/file_service
+    url: jdbc:postgresql://localhost:5433/file_service
+    username: file_service
+    password: file_service_pass
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+      leak-detection-threshold: 2000
+
+  # jdbc.batch_size: 20 - для выполнения запросов пачками а не по одному
+  jpa:
+    hibernate:
+      ddl-auto: update # Для разработки; потом заменить на validate/liquibase/flyway
+    show-sql: true # вывод sql запросов в лог -> перенести в дебаг
+    properties:
+      hibernate:
+        format_sql: true  # форматирование sql запросов в лог -> перенести в дебаг
+    open-in-view: false # По умолчанию Spring Boot держит Hibernate сессию открытой на весь HTTP-запрос (true). Установив false, Hibernate-сессия закрывается после выполнения сервисного метода, и все lazy-загрузки должны выполняться внутри транзакции.
+
 storage:
   type: s3
   s3:
@@ -24,7 +51,6 @@ storage:
     secret-key: cloud_storage123          # Есть в .env
     bucket: cloud-storage
     path-style-access: true                # Обязательно для MinIO и Yandex
-
 
 management:
   endpoints:

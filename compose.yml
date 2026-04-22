@@ -36,7 +36,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${KEYCLOAK_POSTGRES_DB}
+      KC_DB_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/${KEYCLOAK_POSTGRES_DB}
       KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
 
@@ -62,6 +62,7 @@ services:
       - frontend_node_modules:/app/node_modules
     depends_on:
       - keycloak
+#      - file-service
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
@@ -77,6 +78,7 @@ services:
 #    depends_on:
 #      - postgres
 #      - minio
+#      - keycloak
 #    ports:
 #      - "${FILE_SERVICE_PORT}:8081"
 #
@@ -118,6 +120,8 @@ services:
     ports:
       - "5050:80"
     restart: unless-stopped
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
