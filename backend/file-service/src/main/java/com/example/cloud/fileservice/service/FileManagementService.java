@@ -1,5 +1,7 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileDownloadData;
+import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.exception.StorageException;
 import com.example.cloud.fileservice.model.FileMetadata;
@@ -93,5 +95,24 @@ public class FileManagementService {
         }
 
         return fileMetadataService.getMetadataForAllUserFiles(ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public FileDownloadData downloadFile(UUID id, String ownerId) {
+        if (id == null || ownerId == null || ownerId.isBlank()) {
+            log.error("The id or ownerId is incorrect");
+            throw new IllegalArgumentException("The id or ownerId is incorrect");
+        }
+//TODO поправить fileMetadataDto - убрать лишние поля
+        FileDownloadMetadataDto fileMetadataDto = fileMetadataService.getFileMetadata(id, ownerId);
+
+        InputStream fileStream = fileStorageService.getFileStream(fileMetadataDto.storageKey());
+
+        return new FileDownloadData(
+                fileStream,
+                fileMetadataDto.originalName(),
+                fileMetadataDto.contentType(),
+                fileMetadataDto.size()
+        );
     }
 }

@@ -1,10 +1,14 @@
 package com.example.cloud.fileservice.controller;
 
 
+import com.example.cloud.fileservice.dto.FileDownloadData;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.dto.UploadResponse;
 import com.example.cloud.fileservice.service.FileManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,6 +16,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,6 +44,24 @@ public class FileServiceController {
     ) {
         UUID fileId = fileManagementService.uploadFile(file, jwt.getSubject());
         return ResponseEntity.ok(new UploadResponse(fileId));
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<InputStreamResource> downloadFile(
+            @PathVariable("id") UUID id,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        FileDownloadData file = fileManagementService.downloadFile(id, jwt.getSubject());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(file.originalName(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .contentLength(file.size())
+                .body(new InputStreamResource(file.data()));
     }
 
     @DeleteMapping("/{id}")

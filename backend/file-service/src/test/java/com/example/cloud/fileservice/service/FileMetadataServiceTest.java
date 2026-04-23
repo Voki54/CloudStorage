@@ -1,5 +1,6 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.model.FileMetadata;
 import com.example.cloud.fileservice.repository.FileMetadataRepository;
@@ -9,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,17 +31,17 @@ class FileMetadataServiceTest {
     private final String CONTENT_TYPE = "text/plain";
     private final long FILE_SIZE = 100L;
     private final String OWNER_ID = "user1";
-    private final String FILE_HASH = "hash123";
 
     @Test
     void saveMetadata_shouldSaveAndReturnMetadata() {
+        String fileHash = "hash123";
         FileMetadata savedMetadata = FileMetadata.builder()
                 .storageKey(STORAGE_KEY)
                 .originalName(ORIGINAL_FILENAME)
                 .contentType(CONTENT_TYPE)
                 .size(FILE_SIZE)
                 .ownerId(OWNER_ID)
-                .hash(FILE_HASH)
+                .hash(fileHash)
                 .build();
 
         when(fileMetadataRepository.save(any(FileMetadata.class)))
@@ -51,7 +53,7 @@ class FileMetadataServiceTest {
                 CONTENT_TYPE,
                 FILE_SIZE,
                 OWNER_ID,
-                FILE_HASH
+                fileHash
         );
 
         assertNotNull(result);
@@ -60,42 +62,10 @@ class FileMetadataServiceTest {
         assertEquals(CONTENT_TYPE, result.getContentType());
         assertEquals(FILE_SIZE, result.getSize());
         assertEquals(OWNER_ID, result.getOwnerId());
-        assertEquals(FILE_HASH, result.getHash());
+        assertEquals(fileHash, result.getHash());
 
         verify(fileMetadataRepository, times(1)).save(any(FileMetadata.class));
     }
-
-//    @Test
-//    void saveMetadata_shouldThrowException_whenStorageKeyIsNull() {
-//        assertThrows(IllegalArgumentException.class, () ->
-//                fileMetadataService.saveMetadata(
-//                        null,
-//                        "ORIGINAL_FILENAME",
-//                        CONTENT_TYPE,
-//                        FILE_SIZE,
-//                        OWNER_ID,
-//                        FILE_HASH
-//                )
-//        );
-//
-//        verify(fileMetadataRepository, never()).save(any());
-//    }
-//
-//    @Test
-//    void saveMetadata_shouldThrowException_whenOwnerIdIsNull() {
-//        assertThrows(IllegalArgumentException.class, () ->
-//                fileMetadataService.saveMetadata(
-//                        STORAGE_KEY,
-//                        ORIGINAL_FILENAME,
-//                        CONTENT_TYPE,
-//                        FILE_SIZE,
-//                        null,
-//                        FILE_HASH
-//                )
-//        );
-//
-//        verify(fileMetadataRepository, never()).save(any());
-//    }
 
     @Test
     void markAsDeleted_shouldSucceed_whenFileExists() {
@@ -118,5 +88,33 @@ class FileMetadataServiceTest {
 
         verify(fileMetadataRepository)
                 .markAsDeletedByIdAndOwnerId(ID, OWNER_ID);
+    }
+
+    @Test
+    void shouldReturnMetadata_whenFileExists() {
+        FileMetadata entity = new FileMetadata();
+        entity.setOriginalName(ORIGINAL_FILENAME);
+        entity.setContentType(CONTENT_TYPE);
+        entity.setSize(FILE_SIZE);
+        entity.setStorageKey(STORAGE_KEY);
+
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.of(entity));
+
+        FileDownloadMetadataDto result = fileMetadataService.getFileMetadata(ID, OWNER_ID);
+
+        assertNotNull(result);
+        assertEquals(ORIGINAL_FILENAME, result.originalName());
+        assertEquals(CONTENT_TYPE, result.contentType());
+        assertEquals(FILE_SIZE, result.size());
+    }
+
+    @Test
+    void shouldThrowNotFound_whenFileDoesNotExist() {
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> fileMetadataService.getFileMetadata(ID, OWNER_ID)
+        );
     }
 }

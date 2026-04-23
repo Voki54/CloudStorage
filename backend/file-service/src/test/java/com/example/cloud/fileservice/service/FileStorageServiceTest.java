@@ -2,7 +2,9 @@ package com.example.cloud.fileservice.service;
 
 import com.example.cloud.fileservice.config.S3Config;
 import com.example.cloud.fileservice.exception.FileDeleteException;
+import com.example.cloud.fileservice.exception.FileDownloadException;
 import com.example.cloud.fileservice.exception.FileUploadException;
+import com.example.cloud.fileservice.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,12 +12,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -129,5 +129,39 @@ public class FileStorageServiceTest {
                 () -> fileStorageService.deleteFile(STORAGE_KEY));
 
         verify(s3Client, times(1)).deleteObject(any(DeleteObjectRequest.class));
+    }
+
+    @Test
+    void downloadFile_shouldReturnInputStream_whenKeyIsValid() {
+        ResponseInputStream<GetObjectResponse> mockStream =
+                new ResponseInputStream<>(
+                        GetObjectResponse.builder().build(),
+                        new ByteArrayInputStream(CONTENT_FILE)
+                );
+
+        when(s3Client.getObject(any(GetObjectRequest.class)))
+                .thenReturn(mockStream);
+
+        InputStream result = fileStorageService.getFileStream(STORAGE_KEY);
+
+        assertNotNull(result);
+        verify(s3Client).getObject(any(GetObjectRequest.class));
+    }
+
+    @Test
+    void downloadFile_shouldThrowNotFoundException_whenKeyDoesNotExist() {
+        when(s3Client.getObject(any(GetObjectRequest.class)))
+                .thenThrow(NoSuchKeyException.builder().build());
+
+        assertThrows(NotFoundException.class, () -> fileStorageService.getFileStream("missing-key"));
+    }
+
+    @Test
+    void downloadFile_shouldThrowFileDownloadException_whenS3Fails() {
+        when(s3Client.getObject(any(GetObjectRequest.class)))
+                .thenThrow(new RuntimeException("S3 error"));
+
+        assertThrows(FileDownloadException.class,
+                () -> fileStorageService.getFileStream(STORAGE_KEY));
     }
 }

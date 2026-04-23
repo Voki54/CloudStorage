@@ -1,9 +1,7 @@
 package com.example.cloud.fileservice.service;
 
 import com.example.cloud.fileservice.config.S3Config;
-import com.example.cloud.fileservice.exception.FileDeleteException;
-import com.example.cloud.fileservice.exception.FileUploadException;
-import com.example.cloud.fileservice.exception.StorageException;
+import com.example.cloud.fileservice.exception.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,10 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.InputStream;
 
@@ -83,34 +78,20 @@ public class FileStorageService {
         }
     }
 
-//    @Override
-//    public DownloadedFile downloadFile(String key) {
-//        FileMetadata metadata = metadataRepository.findByStorageKey(key)
-//                .orElseThrow(() -> new FileNotFoundException(key));
-//
-//        try (InputStream s3Object = s3Client.getObject(GetObjectRequest.builder()
-//                .bucket(config.getBucket())
-//                .key(key)
-//                .build())) {
-//
-//            byte[] bytes = s3Object.readAllBytes();
-//
-//            return new DownloadedFile(
-//                    bytes,
-//                    metadata.getOriginalName(),
-//                    metadata.getContentType(),
-//                    metadata.getSize(),
-//                    metadata.getOwnerId(),
-//                    metadata.getUploadedAt()
-//            );
-//        } catch (NoSuchKeyException e) {
-//            log.warn("File not found: key='{}'", key);
-//            throw new FileNotFoundException(key, e);
-//        } catch (Exception e) {
-//            log.error("Error downloading file: key='{}'", key, e);
-//            throw new FileDownloadException(key, e);
-//        }
-//    }
+    public InputStream getFileStream(String key) {
+        try {
+            return s3Client.getObject(GetObjectRequest.builder()
+                    .bucket(config.getBucket())
+                    .key(key)
+                    .build());
+        } catch (NoSuchKeyException e) {
+            log.warn("File not found: key='{}'", key);
+            throw new NotFoundException(key, e);
+        } catch (Exception e) {
+            log.error("Error downloading file: key='{}'", key, e);
+            throw new FileDownloadException(key, e);
+        }
+    }
 
     public void deleteFile(String key) {
         if (key == null || key.isBlank()) {

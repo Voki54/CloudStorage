@@ -1,5 +1,6 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.mapper.FileMetadataMapper;
@@ -47,5 +48,12 @@ public class FileMetadataService {
                 .stream()
                 .map(FileMetadataMapper::toDto)
                 .toList();
+    }
+
+    public FileDownloadMetadataDto getFileMetadata (UUID id, String ownerId) {
+        FileMetadata fileMetadata = fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(id, ownerId)
+                .orElseThrow(() -> new NotFoundException(id));
+
+        return FileMetadataMapper.toDownloadDto(fileMetadata);
     }
 }

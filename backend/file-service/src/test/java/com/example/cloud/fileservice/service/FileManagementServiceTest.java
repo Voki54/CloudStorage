@@ -1,6 +1,10 @@
 package com.example.cloud.fileservice.service;
 
 
+import com.example.cloud.fileservice.dto.FileDownloadData;
+import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
+import com.example.cloud.fileservice.exception.FileDownloadException;
+import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.exception.StorageException;
 import com.example.cloud.fileservice.model.FileMetadata;
 import com.example.cloud.fileservice.util.HashUtil;
@@ -16,8 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
@@ -39,6 +42,9 @@ class FileManagementServiceTest {
     private final String OWNER_ID = "user-123";
     private final String HASH = "hash123";
     private final String STORAGE_KEY = "key123";
+    private final String ORIGINAL_FILENAME = "file.txt";
+    private final String CONTENT_TYPE = "text/plain";
+    private final long FILE_SIZE = 100L;
     private final MultipartFile FILE = mock(MultipartFile.class);
 
     @BeforeEach
@@ -203,5 +209,85 @@ class FileManagementServiceTest {
                 () -> fileManagementService.deleteFile(ID, " "));
 
         verifyNoInteractions(fileMetadataService);
+    }
+
+    @Test
+    void shouldDownloadFileSuccessfully() {
+        FileDownloadMetadataDto metadata = new FileDownloadMetadataDto(
+                STORAGE_KEY,
+                ORIGINAL_FILENAME,
+                CONTENT_TYPE,
+                FILE_SIZE
+        );
+
+        InputStream mockStream = new ByteArrayInputStream("data".getBytes());
+
+        when(fileMetadataService.getFileMetadata(ID, OWNER_ID))
+                .thenReturn(metadata);
+
+        when(fileStorageService.getFileStream(STORAGE_KEY))
+                .thenReturn(mockStream);
+
+        FileDownloadData result = fileManagementService.downloadFile(ID, OWNER_ID);
+
+        assertNotNull(result);
+        assertEquals(ORIGINAL_FILENAME, result.originalName());
+        assertEquals(CONTENT_TYPE, result.contentType());
+        assertEquals(FILE_SIZE, result.size());
+        assertEquals(mockStream, result.data());
+
+        verify(fileMetadataService).getFileMetadata(ID, OWNER_ID);
+        verify(fileStorageService).getFileStream(STORAGE_KEY);
+    }
+
+    @Test
+    void shouldThrowException_whenIdIsNull() {
+        assertThrows(IllegalArgumentException.class,
+                () -> fileManagementService.downloadFile(null, OWNER_ID));
+    }
+
+    @Test
+    void shouldThrowException_whenOwnerIdIsNull() {
+        assertThrows(IllegalArgumentException.class,
+                () -> fileManagementService.downloadFile(ID, null));
+    }
+
+    @Test
+    void shouldThrowException_whenOwnerIdIsBlank() {
+        assertThrows(IllegalArgumentException.class,
+                () -> fileManagementService.downloadFile(ID, " "));
+    }
+
+    @Test
+    void shouldPropagateException_whenMetadataNotFound() {
+        UUID fileId = UUID.randomUUID();
+        String userId = "user-1";
+
+        when(fileMetadataService.getFileMetadata(fileId, userId))
+                .thenThrow(new NotFoundException("not found"));
+
+        assertThrows(NotFoundException.class,
+                () -> fileManagementService.downloadFile(fileId, userId));
+
+        verify(fileStorageService, never()).getFileStream(any());
+    }
+
+    @Test
+    void shouldPropagateException_whenStorageFails() {
+        FileDownloadMetadataDto metadata = new FileDownloadMetadataDto(
+                STORAGE_KEY,
+                ORIGINAL_FILENAME,
+                CONTENT_TYPE,
+                FILE_SIZE
+        );
+
+        when(fileMetadataService.getFileMetadata(ID, OWNER_ID))
+                .thenReturn(metadata);
+
+        when(fileStorageService.getFileStream(STORAGE_KEY))
+                .thenThrow(new FileDownloadException(STORAGE_KEY, new RuntimeException()));
+
+        assertThrows(FileDownloadException.class,
+                () -> fileManagementService.downloadFile(ID, OWNER_ID));
     }
 }
