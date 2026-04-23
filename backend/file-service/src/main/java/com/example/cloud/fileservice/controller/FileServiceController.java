@@ -1,6 +1,7 @@
 package com.example.cloud.fileservice.controller;
 
 
+import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.dto.UploadResponse;
 import com.example.cloud.fileservice.service.FileManagementService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +25,12 @@ public class FileServiceController {
     @GetMapping("/hello")
     public String hello(@AuthenticationPrincipal Jwt jwt) {
         return "Hello, " + jwt.getSubject();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<FileMetadataDto>> getFilesMetadata(@AuthenticationPrincipal Jwt jwt
+    ) {
+        return ResponseEntity.ok(fileManagementService.getMetadataForAllUserFiles(jwt.getSubject()));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

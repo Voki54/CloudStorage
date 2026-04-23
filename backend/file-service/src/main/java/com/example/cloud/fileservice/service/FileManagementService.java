@@ -1,5 +1,6 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.exception.StorageException;
 import com.example.cloud.fileservice.model.FileMetadata;
 import com.example.cloud.fileservice.util.HashUtil;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -82,5 +84,14 @@ public class FileManagementService {
         }
 
         fileMetadataService.markAsDeleted(id, ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<FileMetadataDto> getMetadataForAllUserFiles(String ownerId) {
+        if (ownerId == null || ownerId.isBlank()) {
+            throw new IllegalArgumentException("ownerId is invalid");
+        }
+
+        return fileMetadataService.getMetadataForAllUserFiles(ownerId);
     }
 }

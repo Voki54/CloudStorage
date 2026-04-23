@@ -19,8 +19,8 @@ public class CleanupScheduler {
     private final FileMetadataRepository repository;
     private final FileStorageService fileStorageService;
 
-//    @Scheduled(cron = "0 0 3 * * ?")
-    @Scheduled(cron = "*/30 * * * * ?")
+    @Scheduled(cron = "0 0 3 * * ?")
+//    @Scheduled(cron = "*/30 * * * * ?")
     @Transactional
     public void cleanupOldDeletedFiles() {
         log.info("Starting cleanup of deleted files");

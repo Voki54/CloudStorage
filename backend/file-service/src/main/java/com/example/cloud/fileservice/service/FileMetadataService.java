@@ -1,6 +1,8 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.exception.NotFoundException;
+import com.example.cloud.fileservice.mapper.FileMetadataMapper;
 import com.example.cloud.fileservice.model.FileMetadata;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +10,7 @@ import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 import com.example.cloud.fileservice.repository.FileMetadataRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -37,5 +40,12 @@ public class FileMetadataService {
             log.error("File not found, already deleted, or access denied");
             throw new NotFoundException(id);
         }
+    }
+
+    public List<FileMetadataDto> getMetadataForAllUserFiles(String ownerId) {
+        return fileMetadataRepository.findAllByOwnerIdAndIsDeletedFalse(ownerId)
+                .stream()
+                .map(FileMetadataMapper::toDto)
+                .toList();
     }
 }
