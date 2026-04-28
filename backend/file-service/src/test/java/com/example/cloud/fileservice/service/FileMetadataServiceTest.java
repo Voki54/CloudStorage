@@ -1,5 +1,6 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.model.FileMetadata;
@@ -116,5 +117,30 @@ class FileMetadataServiceTest {
 
         assertThrows(NotFoundException.class, () -> fileMetadataService.getFileMetadata(ID, OWNER_ID)
         );
+    }
+
+    @Test
+    void getFileDetails_success() {
+        FileMetadata metadata = FileMetadata.builder().id(ID).build();
+
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.of(metadata));
+
+        FileDetailsDto result = fileMetadataService.getFileDetails(ID, OWNER_ID);
+
+        assertNotNull(result);
+
+        verify(fileMetadataRepository)
+                .findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID);
+    }
+
+    @Test
+    void getFileDetails_notFound() {
+        when(fileMetadataRepository
+                .findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class,
+                () -> fileMetadataService.getFileDetails(ID, OWNER_ID));
     }
 }

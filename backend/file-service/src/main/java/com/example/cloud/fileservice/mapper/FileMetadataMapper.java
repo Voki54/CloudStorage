@@ -1,5 +1,6 @@
 package com.example.cloud.fileservice.mapper;
 
+import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.model.FileMetadata;
@@ -11,9 +12,7 @@ public class FileMetadataMapper {
                 entity.getId(),
                 entity.getOriginalName(),
                 entity.getContentType(),
-                entity.getSize(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getSize()
         );
     }
 
@@ -23,9 +22,17 @@ public class FileMetadataMapper {
                 entity.getOriginalName(),
                 entity.getContentType(),
                 entity.getSize()
-//                entity.getSize(),
-//                entity.getCreatedAt(),
-//                entity.getUpdatedAt()
+        );
+    }
+
+    public static FileDetailsDto toDetailsDto(FileMetadata entity) {
+        return new FileDetailsDto(
+                entity.getId(),
+                entity.getOriginalName(),
+                entity.getContentType(),
+                entity.getSize(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
         );
     }
 }

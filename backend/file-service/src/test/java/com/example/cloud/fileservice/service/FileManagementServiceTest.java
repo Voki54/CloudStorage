@@ -1,6 +1,7 @@
 package com.example.cloud.fileservice.service;
 
 
+import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
 import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.exception.FileDownloadException;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -289,5 +291,32 @@ class FileManagementServiceTest {
 
         assertThrows(FileDownloadException.class,
                 () -> fileManagementService.downloadFile(ID, OWNER_ID));
+    }
+
+    @Test
+    void getFileDetails_success() {
+        Instant createdTime = Instant.now();
+        FileDetailsDto dto = new FileDetailsDto(ID, ORIGINAL_FILENAME, CONTENT_TYPE, FILE_SIZE, createdTime, createdTime);
+
+        when(fileMetadataService.getFileDetails(ID, OWNER_ID))
+                .thenReturn(dto);
+
+        FileDetailsDto result = fileManagementService.getFileDetails(ID, OWNER_ID);
+
+        assertEquals(dto, result);
+
+        verify(fileMetadataService).getFileDetails(ID, OWNER_ID);
+    }
+
+    @Test
+    void getFileDetails_invalidParams() {
+        assertThrows(IllegalArgumentException.class,
+                () -> fileManagementService.getFileDetails(null, OWNER_ID));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> fileManagementService.getFileDetails(ID, null));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> fileManagementService.getFileDetails(ID, ""));
     }
 }

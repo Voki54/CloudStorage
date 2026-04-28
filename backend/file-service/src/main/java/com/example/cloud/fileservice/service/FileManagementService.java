@@ -1,5 +1,6 @@
 package com.example.cloud.fileservice.service;
 
+import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
 import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
@@ -95,6 +96,16 @@ public class FileManagementService {
         }
 
         return fileMetadataService.getMetadataForAllUserFiles(ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public FileDetailsDto getFileDetails(UUID id, String ownerId) {
+        if (id == null || ownerId == null || ownerId.isBlank()) {
+            log.error("The id or ownerId is incorrect");
+            throw new IllegalArgumentException("The id or ownerId is incorrect");
+        }
+
+        return fileMetadataService.getFileDetails(id, ownerId);
     }
 
     @Transactional(readOnly = true)

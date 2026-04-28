@@ -3,17 +3,14 @@ import App from './App.tsx'
 import keycloak from "./keycloak";
 import React from 'react';
 import ReactDOM from 'react-dom/client'
-
-// createRoot(document.getElementById('root')!).render(
-//   <StrictMode>
-//     <App />
-//   </StrictMode>,
-// )
+import { BrowserRouter } from 'react-router-dom';
+// import { FileDetailsProvider } from './components/context/DetailsContext.tsx';
 
 keycloak
   .init({
     onLoad: "login-required",
     checkLoginIframe: false,
+    pkceMethod: "S256",
   })
   .then((authenticated) => {
     if (!authenticated) {
@@ -22,17 +19,14 @@ keycloak
 
     ReactDOM.createRoot(document.getElementById("root")!).render(
       <React.StrictMode>
-        <App />
+        <BrowserRouter>
+          {/* <FileDetailsProvider> */}
+            <App />
+          {/* </FileDetailsProvider> */}
+        </BrowserRouter>
       </React.StrictMode>
     );
   })
   .catch((err) => {
     console.error("Keycloak init error", err);
   });
-
-  // Автообновление токена
-//   setInterval(() => {
-//     keycloak.updateToken(30).catch(() => {
-//       console.log("Failed to refresh token");
-//     });
-//   }, 10000);

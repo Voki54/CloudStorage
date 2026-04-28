@@ -51,6 +51,7 @@ public class FileMetadata {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean isDeleted = false;
 }

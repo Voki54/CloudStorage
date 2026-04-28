@@ -1,6 +1,7 @@
 package com.example.cloud.fileservice.controller;
 
 
+import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.dto.UploadResponse;
@@ -44,6 +45,13 @@ public class FileServiceController {
     ) {
         UUID fileId = fileManagementService.uploadFile(file, jwt.getSubject());
         return ResponseEntity.ok(new UploadResponse(fileId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<FileDetailsDto> getFileDetails(@PathVariable("id") UUID id,
+                                                         @AuthenticationPrincipal Jwt jwt
+    ) {
+        return ResponseEntity.ok(fileManagementService.getFileDetails(id, jwt.getSubject()));
     }
 
     @GetMapping("/{id}/download")
