@@ -1,4 +1,4 @@
-package com.example.cloud.fileservice.model;
+package com.example.cloud.directoryservice.model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,11 +9,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "file_metadata",
+@Table(name = "directory_entity",
         indexes = {
                 @Index(name = "idx_owner_id", columnList = "ownerId"),
-                @Index(name = "idx_directory_key", columnList = "directoryId"),
-                @Index(name = "idx_storage_key", columnList = "storageKey")
         }
 )
 @Getter
@@ -21,31 +19,19 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FileMetadata {
+public class DirectoryEntity {
     @Id
     @GeneratedValue
     private UUID id;
 
-    @Column(nullable = false, unique = true)
-    private String storageKey;
-
-    @Column(nullable = false, length = 255)
-    private String originalName;
-
     @Column(nullable = false)
-    private String contentType;
-
-    @Column(nullable = false)
-    private long size;
+    private String name;
 
     @Column(nullable = false)
     private String ownerId;
 
-    @Column(nullable = false, length = 64)
-    private String hash;
-
-    @Column(nullable = false)
-    private UUID directoryId;
+    @Column()
+    private UUID parentId;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

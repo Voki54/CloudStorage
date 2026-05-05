@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { FileMetadata } from '../../types/file';
-import { getFiles } from '../../api/fileApi';
+import { getFilesByDirectory } from '../../api/fileApi';
+import { useDirectories } from './DirectoryContext';
 
 interface FilesContextType {
   files: FileMetadata[];
@@ -12,15 +13,20 @@ const FilesContext = createContext<FilesContextType | undefined>(undefined);
 
 export function FilesProvider({ children }: { children: ReactNode }) {
   const [files, setFiles] = useState<FileMetadata[]>([]);
+  const { currentDirectory } = useDirectories();
 
   const loadFiles = async () => {
-    const data = await getFiles();
+    if (!currentDirectory) return;
+
+    const data = await getFilesByDirectory(currentDirectory.id);
     setFiles(data);
   };
 
   useEffect(() => {
-    loadFiles();
-  }, []);
+    if (currentDirectory) {
+      loadFiles();
+    }
+  }, [currentDirectory]);
 
   return (
     <FilesContext.Provider value={{ files, loadFiles }}>

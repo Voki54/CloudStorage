@@ -17,6 +17,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
     List<FileMetadata> findAllByOwnerIdAndIsDeletedFalse(String ownerId);
     Optional<FileMetadata> findByIdAndOwnerIdAndIsDeletedFalse(UUID id, String ownerId);
     Optional<FileMetadata> findByHashAndOwnerIdAndIsDeletedFalse(String hash, String ownerId);
+    List<FileMetadata> findByDirectoryIdAndOwnerIdAndIsDeletedFalse(UUID directoryId, String ownerId);
     List<FileMetadata> findAllByIsDeletedTrue();
     @Modifying
     @Query("UPDATE FileMetadata f SET f.isDeleted = true, f.updatedAt = CURRENT_TIMESTAMP" +

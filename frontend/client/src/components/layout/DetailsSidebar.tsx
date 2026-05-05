@@ -1,7 +1,7 @@
 import { useFileDetails } from "../context/DetailsContext";
 import { X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
-import { FileIcon } from "../files/FileIcon";
+import { ObjectIcon } from "../ui/ObjectIcon";
 
 function formatSize(size: number) {
   if (size < 1024) return size + " B";
@@ -27,12 +27,11 @@ export default function FileDetailsSidebar() {
 
         {!loading && selectedFile && (
           <div className="px-3">
-            {/* <div className="p-4 bg-white rounded-2xl shadow-sm w-full max-w-md"> */}
-
             <div className="h-30 flex justify-center items-center mb-4">
-              <FileIcon
-                fileName={selectedFile.originalName}
+              <ObjectIcon
+                objectName={selectedFile.originalName}
                 contentType={selectedFile.contentType}
+                type="file"
                 className="w-15 h-15 text-gray-500"
               />
             </div>
@@ -77,15 +76,6 @@ export default function FileDetailsSidebar() {
             </div>
           </div>
         )}
-
-        {/* {!loading && selectedFile && (
-          <div className="space-y-2 text-sm">
-            <p><strong>Имя:</strong> {selectedFile.originalName}</p>
-            <p><strong>Размер:</strong> {(selectedFile.size / 1024).toFixed(2)} KB</p>
-            <p><strong>Тип:</strong> {selectedFile.contentType}</p>
-            <p><strong>Создан:</strong> {selectedFile.createdAt}</p>
-          </div>
-        )} */}
       </div>
     </div>
   );

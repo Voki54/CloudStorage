@@ -47,6 +47,7 @@ class FileManagementServiceTest {
     private final String ORIGINAL_FILENAME = "file.txt";
     private final String CONTENT_TYPE = "text/plain";
     private final long FILE_SIZE = 100L;
+    private final UUID DIR_ID = UUID.randomUUID();
     private final MultipartFile FILE = mock(MultipartFile.class);
 
     @BeforeEach
@@ -71,10 +72,10 @@ class FileManagementServiceTest {
                     .id(fileId)
                     .build();
 
-            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any()))
+            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any(), any()))
                     .thenReturn(metadata);
 
-            UUID result = fileManagementService.uploadFile(file, OWNER_ID);
+            UUID result = fileManagementService.uploadFile(file, OWNER_ID, DIR_ID);
 
             assertEquals(fileId, result);
 
@@ -82,7 +83,7 @@ class FileManagementServiceTest {
                     .uploadFile(any(), any(), any(), anyLong(), eq(OWNER_ID));
 
             verify(fileMetadataService, times(1))
-                    .saveMetadata(any(), any(), any(), anyLong(), eq(OWNER_ID), eq(HASH));
+                    .saveMetadata(any(), any(), any(), anyLong(), eq(OWNER_ID), eq(HASH), any());
         }
     }
 
@@ -91,7 +92,7 @@ class FileManagementServiceTest {
         when(file.getInputStream()).thenThrow(new RuntimeException("IO error"));
 
         assertThrows(StorageException.class, () ->
-                fileManagementService.uploadFile(file, OWNER_ID)
+                fileManagementService.uploadFile(file, OWNER_ID, DIR_ID)
         );
 
         verifyNoInteractions(fileStorageService);
@@ -107,7 +108,7 @@ class FileManagementServiceTest {
                     .thenThrow(new RuntimeException("S3 error"));
 
             assertThrows(RuntimeException.class, () ->
-                    fileManagementService.uploadFile(file, OWNER_ID)
+                    fileManagementService.uploadFile(file, OWNER_ID, DIR_ID)
             );
 
             verify(fileStorageService, times(1)).uploadFile(any(), any(), any(), anyLong(), any());
@@ -123,18 +124,18 @@ class FileManagementServiceTest {
             when(fileStorageService.uploadFile(any(), any(), any(), anyLong(), any()))
                     .thenReturn(STORAGE_KEY);
 
-            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any()))
+            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any(), any()))
                     .thenThrow(new RuntimeException("DB error"));
 
             assertThrows(RuntimeException.class, () ->
-                    fileManagementService.uploadFile(file, OWNER_ID)
+                    fileManagementService.uploadFile(file, OWNER_ID, DIR_ID)
             );
 
             verify(fileStorageService, times(1))
                     .uploadFile(any(), any(), any(), anyLong(), any());
 
             verify(fileMetadataService, times(1))
-                    .saveMetadata(any(), any(), any(), anyLong(), any(), any());
+                    .saveMetadata(any(), any(), any(), anyLong(), any(), any(), any());
         }
     }
 
@@ -146,13 +147,13 @@ class FileManagementServiceTest {
             when(fileStorageService.uploadFile(any(), any(), any(), anyLong(), any()))
                     .thenReturn(STORAGE_KEY);
 
-            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any()))
+            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any(), any()))
                     .thenThrow(new RuntimeException("DB error"));
 
             doNothing().when(fileStorageService).deleteFile(STORAGE_KEY);
 
             assertThrows(RuntimeException.class, () ->
-                    fileManagementService.uploadFile(file, OWNER_ID)
+                    fileManagementService.uploadFile(file, OWNER_ID, DIR_ID)
             );
 
             verify(fileStorageService).deleteFile(STORAGE_KEY);
@@ -163,7 +164,18 @@ class FileManagementServiceTest {
     void uploadFile_shouldThrowException_whenOwnerIdIsNull() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> fileManagementService.uploadFile(FILE, null)
+                () -> fileManagementService.uploadFile(FILE, null, DIR_ID)
+        );
+
+        verifyNoInteractions(fileStorageService);
+        verifyNoInteractions(fileMetadataService);
+    }
+
+    @Test
+    void uploadFile_shouldThrowException_whenDirectoryIdIsNull() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> fileManagementService.uploadFile(FILE, OWNER_ID, null)
         );
 
         verifyNoInteractions(fileStorageService);
@@ -174,7 +186,7 @@ class FileManagementServiceTest {
     void uploadFile_shouldThrowException_whenOwnerIdIsBlank() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> fileManagementService.uploadFile(FILE, "   ")
+                () -> fileManagementService.uploadFile(FILE, "   ", DIR_ID)
         );
 
         verifyNoInteractions(fileStorageService);

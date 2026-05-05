@@ -6,11 +6,10 @@ import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.mapper.FileMetadataMapper;
 import com.example.cloud.fileservice.model.FileMetadata;
+import com.example.cloud.fileservice.repository.FileMetadataRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
-import com.example.cloud.fileservice.repository.FileMetadataRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +21,7 @@ public class FileMetadataService {
     private final FileMetadataRepository fileMetadataRepository;
 
     public FileMetadata saveMetadata(String storageKey, String originalFilename, String contentType, long fileSize,
-                             String ownerId, String fileHash) {
+                                     String ownerId, String fileHash, UUID directoryId) {
 
         return fileMetadataRepository.save(FileMetadata.builder()
                 .storageKey(storageKey)
@@ -31,6 +30,7 @@ public class FileMetadataService {
                 .size(fileSize)
                 .ownerId(ownerId)
                 .hash(fileHash)
+                .directoryId(directoryId)
                 .build()
         );
     }
@@ -51,14 +51,21 @@ public class FileMetadataService {
                 .toList();
     }
 
-    public FileDownloadMetadataDto getFileMetadata (UUID id, String ownerId) {
+    public List<FileMetadataDto> getFilesMetadataByDirectory(UUID directoryId, String ownerId) {
+        return fileMetadataRepository.findByDirectoryIdAndOwnerIdAndIsDeletedFalse(directoryId, ownerId)
+                .stream()
+                .map(FileMetadataMapper::toDto)
+                .toList();
+    }
+
+    public FileDownloadMetadataDto getFileMetadata(UUID id, String ownerId) {
         FileMetadata fileMetadata = fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(id, ownerId)
                 .orElseThrow(() -> new NotFoundException(id));
 
         return FileMetadataMapper.toDownloadDto(fileMetadata);
     }
 
-    public FileDetailsDto getFileDetails (UUID id, String ownerId) {
+    public FileDetailsDto getFileDetails(UUID id, String ownerId) {
         FileMetadata fileMetadata = fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(id, ownerId)
                 .orElseThrow(() -> new NotFoundException(id));
 

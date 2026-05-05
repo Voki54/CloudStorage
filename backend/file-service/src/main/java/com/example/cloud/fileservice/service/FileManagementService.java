@@ -26,10 +26,14 @@ public class FileManagementService {
 
 
     @Transactional
-    public UUID uploadFile(MultipartFile file, String ownerId) {
+    public UUID uploadFile(MultipartFile file, String ownerId, UUID directoryID) {
         if (ownerId == null || ownerId.isBlank()) {
             log.error("The ownerId is incorrect");
             throw new IllegalArgumentException("The ownerId is incorrect");
+        }
+
+        if (directoryID == null) {
+            throw new IllegalArgumentException("The directoryID is incorrect");
         }
 
         String fileHash;
@@ -60,7 +64,8 @@ public class FileManagementService {
                     contentType,
                     fileSize,
                     ownerId,
-                    fileHash
+                    fileHash,
+                    directoryID
             );
 
             return fileMetadata.getId();
@@ -96,6 +101,15 @@ public class FileManagementService {
         }
 
         return fileMetadataService.getMetadataForAllUserFiles(ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<FileMetadataDto> getFilesMetadataByDirectory(UUID directoryId, String ownerId) {
+        if (directoryId == null || ownerId == null || ownerId.isBlank()) {
+            throw new IllegalArgumentException("ownerId is invalid");
+        }
+
+        return fileMetadataService.getFilesMetadataByDirectory(directoryId, ownerId);
     }
 
     @Transactional(readOnly = true)

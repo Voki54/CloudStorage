@@ -1,4 +1,4 @@
-package com.example.cloud.fileservice.config;
+package com.example.cloud.directoryservice.config;
 
 
 import org.springframework.context.annotation.Bean;
@@ -23,7 +23,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/files/**").authenticated()
+                        .requestMatchers("/api/directories/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

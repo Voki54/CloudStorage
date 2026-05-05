@@ -1,22 +1,30 @@
-import api from "./axios";
+import { fileApi } from "./axios";
 
-const BASE_URL  = "/api/files"
+const BASE_URL = "/api/files"
 
 export const getFiles = async () => {
-  const res = await api.get(BASE_URL);
+  const res = await fileApi.get(BASE_URL);
+  return res.data;
+};
+
+export const getFilesByDirectory = async (directoryId: string) => {
+  const res = await fileApi.get(BASE_URL, {
+    params: { directoryId }
+  });
   return res.data;
 };
 
 export const getFileDetails = async (id: string) => {
-  const res = await api.get(`${BASE_URL}/${id}`);
+  const res = await fileApi.get(`${BASE_URL}/${id}`);
   return res.data;
 };
 
-export const uploadFile = async (file: File) => {
+export const uploadFile = async (file: File, directoryId: string) => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("directoryId", directoryId);
 
-  const res = await api.post(BASE_URL, formData, {
+  const res = await fileApi.post(BASE_URL, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -26,7 +34,7 @@ export const uploadFile = async (file: File) => {
 };
 
 export const downloadFile = async (id: string) => {
-  const res = await api.get(`${BASE_URL}/${id}/download`, {
+  const res = await fileApi.get(`${BASE_URL}/${id}/download`, {
     responseType: "blob",
   });
 
@@ -34,5 +42,5 @@ export const downloadFile = async (id: string) => {
 };
 
 export const deleteFile = async (id: string) => {
-  await api.delete(`${BASE_URL}/${id}`);
+  await fileApi.delete(`${BASE_URL}/${id}`);
 };

@@ -5,6 +5,7 @@ import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.dto.UploadResponse;
+import com.example.cloud.fileservice.model.FileMetadata;
 import com.example.cloud.fileservice.service.FileManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -33,17 +34,26 @@ public class FileServiceController {
         return "Hello, " + jwt.getSubject();
     }
 
+//    @GetMapping
+//    public ResponseEntity<List<FileMetadataDto>> getFilesMetadata(@AuthenticationPrincipal Jwt jwt
+//    ) {
+//        return ResponseEntity.ok(fileManagementService.getMetadataForAllUserFiles(jwt.getSubject()));
+//    }
+
     @GetMapping
-    public ResponseEntity<List<FileMetadataDto>> getFilesMetadata(@AuthenticationPrincipal Jwt jwt
+    public ResponseEntity<List<FileMetadataDto>> getFilesMetadataByDirectory(
+            @RequestParam("directoryId") UUID directoryId,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        return ResponseEntity.ok(fileManagementService.getMetadataForAllUserFiles(jwt.getSubject()));
+        return ResponseEntity.ok(fileManagementService.getFilesMetadataByDirectory(directoryId, jwt.getSubject()));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UploadResponse> uploadFile(@RequestParam("file") MultipartFile file,
+                                                     @RequestParam("directoryId") UUID directoryId,
                                                      @AuthenticationPrincipal Jwt jwt
     ) {
-        UUID fileId = fileManagementService.uploadFile(file, jwt.getSubject());
+        UUID fileId = fileManagementService.uploadFile(file, jwt.getSubject(), directoryId);
         return ResponseEntity.ok(new UploadResponse(fileId));
     }
 

@@ -12,7 +12,7 @@ export default function Sidebar() {
   return (
     <div className="fixed top-0 left-0 w-15 h-screen bg-gray-100 flex flex-col items-center py-3">
       
-      <div className="mb-22">
+      <div className="mb-36">
         <div className="w-10 h-10 flex items-center justify-center text-gray-700 text-4xl font-light bg-gray-300 rounded-3xl">
           <div className="-translate-y-0.5">
             Ф

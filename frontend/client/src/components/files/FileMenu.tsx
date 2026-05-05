@@ -1,7 +1,10 @@
 import { NavLink } from "react-router-dom";
 import { HardDrive, Image, Star, UsersRound, HandHelping, ListChecks, Trash2, } from "lucide-react";
 import UploadButton from "../ui/UploadButton";
+import CreateButton from "../ui/CreateButton";
 import { useFiles } from "../context/FilesContext";
+import { useDirectories } from "../context/DirectoryContext";
+
 
 const items = [
   { label: "Все файлы", to: "/files", icon: HardDrive },
@@ -15,10 +18,12 @@ const items = [
 
 export default function FileMenu() {
   const { loadFiles } = useFiles();
+  const { refreshDirectories } = useDirectories();
 
   return (
     <div className="flex flex-col gap-2">
       <UploadButton onUploadSuccess={loadFiles} />
+      <CreateButton onCreateSuccess={refreshDirectories} />
 
       <nav className="flex flex-col gap-2">
         {items.map((item) => {

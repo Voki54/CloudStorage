@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +26,7 @@ class FileMetadataServiceTest {
     private FileMetadataService fileMetadataService;
 
     private final UUID ID = UUID.randomUUID();
+    private final UUID DIR_ID = UUID.randomUUID();
     private final String STORAGE_KEY = "user1/file.txt";
     private final String ORIGINAL_FILENAME = "file.txt";
     private final String CONTENT_TYPE = "text/plain";
@@ -43,6 +43,7 @@ class FileMetadataServiceTest {
                 .size(FILE_SIZE)
                 .ownerId(OWNER_ID)
                 .hash(fileHash)
+                .directoryId(DIR_ID)
                 .build();
 
         when(fileMetadataRepository.save(any(FileMetadata.class)))
@@ -54,7 +55,8 @@ class FileMetadataServiceTest {
                 CONTENT_TYPE,
                 FILE_SIZE,
                 OWNER_ID,
-                fileHash
+                fileHash,
+                DIR_ID
         );
 
         assertNotNull(result);
@@ -64,6 +66,7 @@ class FileMetadataServiceTest {
         assertEquals(FILE_SIZE, result.getSize());
         assertEquals(OWNER_ID, result.getOwnerId());
         assertEquals(fileHash, result.getHash());
+        assertEquals(DIR_ID, result.getDirectoryId());
 
         verify(fileMetadataRepository, times(1)).save(any(FileMetadata.class));
     }
@@ -97,7 +100,6 @@ class FileMetadataServiceTest {
         entity.setOriginalName(ORIGINAL_FILENAME);
         entity.setContentType(CONTENT_TYPE);
         entity.setSize(FILE_SIZE);
-        entity.setStorageKey(STORAGE_KEY);
 
         when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
                 .thenReturn(Optional.of(entity));

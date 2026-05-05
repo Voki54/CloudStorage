@@ -1,9 +1,39 @@
 server:
-  port: ${DIRECTORY_SERVICE_PORT}
+  port: 8082
+#  port: ${DIRECTORY_SERVICE_PORT}
 
 spring:
   application:
     name: directory-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/cloud-storage
+  datasource:
+    #    Todo Исчпользовать переменные окружения
+
+    # for docker
+    #    url: jdbc:postgresql://postgres:5432/file_service
+    url: jdbc:postgresql://localhost:5433/directory_service
+    username: directory_service
+    password: directory_service_pass
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+      leak-detection-threshold: 2000
+  jpa:
+    hibernate:
+      ddl-auto: update # Для разработки; потом заменить на validate/liquibase/flyway
+    show-sql: true # вывод sql запросов в лог -> перенести в дебаг
+    properties:
+      hibernate:
+        format_sql: true  # форматирование sql запросов в лог -> перенести в дебаг
+    open-in-view: false # По умолчанию Spring Boot держит Hibernate сессию открытой на весь HTTP-запрос (true). Установив false, Hibernate-сессия закрывается после выполнения сервисного метода, и все lazy-загрузки должны выполняться внутри транзакции.
 
 management:
   endpoints:

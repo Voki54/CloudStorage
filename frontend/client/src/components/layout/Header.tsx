@@ -18,7 +18,7 @@ export default function Header() {
   const title = routeTitles[location.pathname] || "";
 
   return (
-    <div className="sticky top-0 z-15 w-full bg-white px-6 py-3 flex items-center justify-between">
+    <div className="sticky h-15 top-0 w-full bg-white px-6 py-3 flex items-center justify-between z-10">
 
       <div className="flex items-center gap-6">
         {title && (

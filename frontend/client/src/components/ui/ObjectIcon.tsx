@@ -1,4 +1,5 @@
 import {
+  Folder,
   File,
   Image,
   Film,
@@ -9,7 +10,14 @@ import {
   Presentation,
 } from "lucide-react";
 
-function getFileType(fileName?: string, contentType?: string): string {
+type Props = {
+  objectName?: string;
+  contentType?: string;
+  type?: 'dir' | 'file';
+  className?: string;
+};
+
+function getObjectType(objectName?: string, contentType?: string): string {
   if (contentType) {
     if (contentType.startsWith("image/")) return "image";
     if (contentType.startsWith("video/")) return "video";
@@ -18,9 +26,9 @@ function getFileType(fileName?: string, contentType?: string): string {
     if (contentType.includes("zip")) return "archive";
   }
 
-  if (!fileName) return "file";
+  if (!objectName) return "file";
 
-  const ext = fileName.split(".").pop()?.toLowerCase();
+  const ext = objectName.split(".").pop()?.toLowerCase();
 
   switch (ext) {
     case "jpg":
@@ -67,16 +75,12 @@ function getFileType(fileName?: string, contentType?: string): string {
   }
 }
 
-type Props = {
-  fileName?: string;
-  contentType?: string;
-  className?: string;
-};
+export const ObjectIcon = ({ objectName, contentType, type, className }: Props) => {
+  if (type === "dir") return <Folder className={className} />;
+  
+  const fileType = getObjectType(objectName, contentType);
 
-export const FileIcon = ({ fileName, contentType, className }: Props) => {
-  const type = getFileType(fileName, contentType);
-
-  switch (type) {
+  switch (fileType) {
     case "image":
       return <Image className={className} />;
 
