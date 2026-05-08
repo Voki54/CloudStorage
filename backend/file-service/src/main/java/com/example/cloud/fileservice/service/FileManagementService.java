@@ -2,10 +2,12 @@ package com.example.cloud.fileservice.service;
 
 import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
-import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
+import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.exception.StorageException;
+import com.example.cloud.fileservice.mapper.FileMetadataMapper;
 import com.example.cloud.fileservice.model.FileMetadata;
+import com.example.cloud.fileservice.repository.FileMetadataRepository;
 import com.example.cloud.fileservice.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,18 +24,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileManagementService {
     private final FileStorageService fileStorageService;
-    private final FileMetadataService fileMetadataService;
+    private final FileMetadataRepository fileMetadataRepository;
 
 
     @Transactional
-    public UUID uploadFile(MultipartFile file, String ownerId, UUID directoryID) {
+    public UUID uploadFile(MultipartFile file, String ownerId, UUID directoryId) {
         if (ownerId == null || ownerId.isBlank()) {
             log.error("The ownerId is incorrect");
             throw new IllegalArgumentException("The ownerId is incorrect");
         }
 
-        if (directoryID == null) {
-            throw new IllegalArgumentException("The directoryID is incorrect");
+        if (directoryId == null) {
+            throw new IllegalArgumentException("The directoryId is incorrect");
         }
 
         String fileHash;
@@ -58,14 +60,15 @@ public class FileManagementService {
                 throw new IllegalArgumentException("The storageKey and ownerId is incorrect");
             }
 
-            FileMetadata fileMetadata = fileMetadataService.saveMetadata(
-                    storageKey,
-                    originalFilename,
-                    contentType,
-                    fileSize,
-                    ownerId,
-                    fileHash,
-                    directoryID
+            FileMetadata fileMetadata = fileMetadataRepository.save(FileMetadata.builder()
+                    .storageKey(storageKey)
+                    .originalName(originalFilename)
+                    .contentType(contentType)
+                    .size(fileSize)
+                    .ownerId(ownerId)
+                    .hash(fileHash)
+                    .directoryId(directoryId)
+                    .build()
             );
 
             return fileMetadata.getId();
@@ -91,16 +94,12 @@ public class FileManagementService {
             throw new IllegalArgumentException("The id or ownerId is incorrect");
         }
 
-        fileMetadataService.markAsDeleted(id, ownerId);
-    }
+        int updated = fileMetadataRepository.markAsDeletedByIdAndOwnerId(id, ownerId);
 
-    @Transactional(readOnly = true)
-    public List<FileMetadataDto> getMetadataForAllUserFiles(String ownerId) {
-        if (ownerId == null || ownerId.isBlank()) {
-            throw new IllegalArgumentException("ownerId is invalid");
+        if (updated == 0) {
+            log.error("File not found, already deleted, or access denied");
+            throw new NotFoundException(id);
         }
-
-        return fileMetadataService.getMetadataForAllUserFiles(ownerId);
     }
 
     @Transactional(readOnly = true)
@@ -109,7 +108,10 @@ public class FileManagementService {
             throw new IllegalArgumentException("ownerId is invalid");
         }
 
-        return fileMetadataService.getFilesMetadataByDirectory(directoryId, ownerId);
+        return fileMetadataRepository.findByDirectoryIdAndOwnerIdAndIsDeletedFalse(directoryId, ownerId)
+                .stream()
+                .map(FileMetadataMapper::toDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -119,7 +121,10 @@ public class FileManagementService {
             throw new IllegalArgumentException("The id or ownerId is incorrect");
         }
 
-        return fileMetadataService.getFileDetails(id, ownerId);
+        FileMetadata fileMetadata = fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(id, ownerId)
+                .orElseThrow(() -> new NotFoundException(id));
+
+        return FileMetadataMapper.toDetailsDto(fileMetadata);
     }
 
     @Transactional(readOnly = true)
@@ -128,16 +133,17 @@ public class FileManagementService {
             log.error("The id or ownerId is incorrect");
             throw new IllegalArgumentException("The id or ownerId is incorrect");
         }
-//TODO поправить fileMetadataDto - убрать лишние поля
-        FileDownloadMetadataDto fileMetadataDto = fileMetadataService.getFileMetadata(id, ownerId);
 
-        InputStream fileStream = fileStorageService.getFileStream(fileMetadataDto.storageKey());
+        FileMetadata fileMetadata = fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(id, ownerId)
+                .orElseThrow(() -> new NotFoundException(id));
+
+        InputStream fileStream = fileStorageService.getFileStream(fileMetadata.getStorageKey());
 
         return new FileDownloadData(
                 fileStream,
-                fileMetadataDto.originalName(),
-                fileMetadataDto.contentType(),
-                fileMetadataDto.size()
+                fileMetadata.getOriginalName(),
+                fileMetadata.getContentType(),
+                fileMetadata.getSize()
         );
     }
 }

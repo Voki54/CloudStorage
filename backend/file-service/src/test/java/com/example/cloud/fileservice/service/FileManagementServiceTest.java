@@ -3,11 +3,11 @@ package com.example.cloud.fileservice.service;
 
 import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
-import com.example.cloud.fileservice.dto.FileDownloadMetadataDto;
 import com.example.cloud.fileservice.exception.FileDownloadException;
 import com.example.cloud.fileservice.exception.NotFoundException;
 import com.example.cloud.fileservice.exception.StorageException;
 import com.example.cloud.fileservice.model.FileMetadata;
+import com.example.cloud.fileservice.repository.FileMetadataRepository;
 import com.example.cloud.fileservice.util.HashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +33,7 @@ class FileManagementServiceTest {
     private FileStorageService fileStorageService;
 
     @Mock
-    private FileMetadataService fileMetadataService;
+    private FileMetadataRepository fileMetadataRepository;
 
     @Mock
     private MultipartFile file;
@@ -49,6 +50,19 @@ class FileManagementServiceTest {
     private final long FILE_SIZE = 100L;
     private final UUID DIR_ID = UUID.randomUUID();
     private final MultipartFile FILE = mock(MultipartFile.class);
+
+    private final FileMetadata METADATA = FileMetadata.builder()
+            .id(ID)
+            .storageKey(STORAGE_KEY)
+            .originalName(ORIGINAL_FILENAME)
+            .contentType(CONTENT_TYPE)
+            .size(FILE_SIZE)
+            .ownerId(OWNER_ID)
+            .hash("hash123")
+            .directoryId(DIR_ID)
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
 
     @BeforeEach
     void setup() throws Exception {
@@ -72,8 +86,7 @@ class FileManagementServiceTest {
                     .id(fileId)
                     .build();
 
-            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any(), any()))
-                    .thenReturn(metadata);
+            when(fileMetadataRepository.save(any())).thenReturn(metadata);
 
             UUID result = fileManagementService.uploadFile(file, OWNER_ID, DIR_ID);
 
@@ -82,8 +95,7 @@ class FileManagementServiceTest {
             verify(fileStorageService, times(1))
                     .uploadFile(any(), any(), any(), anyLong(), eq(OWNER_ID));
 
-            verify(fileMetadataService, times(1))
-                    .saveMetadata(any(), any(), any(), anyLong(), eq(OWNER_ID), eq(HASH), any());
+            verify(fileMetadataRepository, times(1)).save(any());
         }
     }
 
@@ -96,7 +108,7 @@ class FileManagementServiceTest {
         );
 
         verifyNoInteractions(fileStorageService);
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
@@ -112,7 +124,7 @@ class FileManagementServiceTest {
             );
 
             verify(fileStorageService, times(1)).uploadFile(any(), any(), any(), anyLong(), any());
-            verifyNoInteractions(fileMetadataService);
+            verifyNoInteractions(fileMetadataRepository);
         }
     }
 
@@ -124,8 +136,7 @@ class FileManagementServiceTest {
             when(fileStorageService.uploadFile(any(), any(), any(), anyLong(), any()))
                     .thenReturn(STORAGE_KEY);
 
-            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any(), any()))
-                    .thenThrow(new RuntimeException("DB error"));
+            when(fileMetadataRepository.save(any())).thenThrow(new RuntimeException("DB error"));
 
             assertThrows(RuntimeException.class, () ->
                     fileManagementService.uploadFile(file, OWNER_ID, DIR_ID)
@@ -134,8 +145,7 @@ class FileManagementServiceTest {
             verify(fileStorageService, times(1))
                     .uploadFile(any(), any(), any(), anyLong(), any());
 
-            verify(fileMetadataService, times(1))
-                    .saveMetadata(any(), any(), any(), anyLong(), any(), any(), any());
+            verify(fileMetadataRepository, times(1)).save(any());
         }
     }
 
@@ -147,8 +157,7 @@ class FileManagementServiceTest {
             when(fileStorageService.uploadFile(any(), any(), any(), anyLong(), any()))
                     .thenReturn(STORAGE_KEY);
 
-            when(fileMetadataService.saveMetadata(any(), any(), any(), anyLong(), any(), any(), any()))
-                    .thenThrow(new RuntimeException("DB error"));
+            when(fileMetadataRepository.save(any())).thenThrow(new RuntimeException("DB error"));
 
             doNothing().when(fileStorageService).deleteFile(STORAGE_KEY);
 
@@ -168,7 +177,7 @@ class FileManagementServiceTest {
         );
 
         verifyNoInteractions(fileStorageService);
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
@@ -179,7 +188,7 @@ class FileManagementServiceTest {
         );
 
         verifyNoInteractions(fileStorageService);
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
@@ -190,15 +199,14 @@ class FileManagementServiceTest {
         );
 
         verifyNoInteractions(fileStorageService);
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
     void deleteFile_shouldCallService_whenInputIsValid() {
+        when(fileMetadataRepository.markAsDeletedByIdAndOwnerId(any(), any())).thenReturn(1);
         fileManagementService.deleteFile(ID, OWNER_ID);
-
-        verify(fileMetadataService)
-                .markAsDeleted(ID, OWNER_ID);
+        verify(fileMetadataRepository).markAsDeletedByIdAndOwnerId(ID, OWNER_ID);
     }
 
     @Test
@@ -206,7 +214,7 @@ class FileManagementServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.deleteFile(null, OWNER_ID));
 
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
@@ -214,7 +222,7 @@ class FileManagementServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.deleteFile(ID, null));
 
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
@@ -222,25 +230,29 @@ class FileManagementServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.deleteFile(ID, " "));
 
-        verifyNoInteractions(fileMetadataService);
+        verifyNoInteractions(fileMetadataRepository);
     }
 
     @Test
-    void shouldDownloadFileSuccessfully() {
-        FileDownloadMetadataDto metadata = new FileDownloadMetadataDto(
-                STORAGE_KEY,
-                ORIGINAL_FILENAME,
-                CONTENT_TYPE,
-                FILE_SIZE
-        );
+    void deleteFile_shouldThrowException_whenFileNotFound() {
+        when(fileMetadataRepository.markAsDeletedByIdAndOwnerId(ID, OWNER_ID))
+                .thenReturn(0);
 
+        assertThrows(NotFoundException.class,
+                () -> fileManagementService.deleteFile(ID, OWNER_ID));
+
+        verify(fileMetadataRepository)
+                .markAsDeletedByIdAndOwnerId(ID, OWNER_ID);
+    }
+
+    @Test
+    void downloadFile_shouldDownloadFileSuccessfully() {
         InputStream mockStream = new ByteArrayInputStream("data".getBytes());
 
-        when(fileMetadataService.getFileMetadata(ID, OWNER_ID))
-                .thenReturn(metadata);
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.of(METADATA));
 
-        when(fileStorageService.getFileStream(STORAGE_KEY))
-                .thenReturn(mockStream);
+        when(fileStorageService.getFileStream(STORAGE_KEY)).thenReturn(mockStream);
 
         FileDownloadData result = fileManagementService.downloadFile(ID, OWNER_ID);
 
@@ -250,53 +262,43 @@ class FileManagementServiceTest {
         assertEquals(FILE_SIZE, result.size());
         assertEquals(mockStream, result.data());
 
-        verify(fileMetadataService).getFileMetadata(ID, OWNER_ID);
+        verify(fileMetadataRepository).findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID);
         verify(fileStorageService).getFileStream(STORAGE_KEY);
     }
 
     @Test
-    void shouldThrowException_whenIdIsNull() {
+    void downloadFile_shouldThrowException_whenIdIsNull() {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.downloadFile(null, OWNER_ID));
     }
 
     @Test
-    void shouldThrowException_whenOwnerIdIsNull() {
+    void downloadFile_shouldThrowException_whenOwnerIdIsNull() {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.downloadFile(ID, null));
     }
 
     @Test
-    void shouldThrowException_whenOwnerIdIsBlank() {
+    void downloadFile_shouldThrowException_whenOwnerIdIsBlank() {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.downloadFile(ID, " "));
     }
 
     @Test
-    void shouldPropagateException_whenMetadataNotFound() {
-        UUID fileId = UUID.randomUUID();
-        String userId = "user-1";
-
-        when(fileMetadataService.getFileMetadata(fileId, userId))
+    void downloadFile_shouldPropagateException_whenMetadataNotFound() {
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
                 .thenThrow(new NotFoundException("not found"));
 
         assertThrows(NotFoundException.class,
-                () -> fileManagementService.downloadFile(fileId, userId));
+                () -> fileManagementService.downloadFile(ID, OWNER_ID));
 
         verify(fileStorageService, never()).getFileStream(any());
     }
 
     @Test
-    void shouldPropagateException_whenStorageFails() {
-        FileDownloadMetadataDto metadata = new FileDownloadMetadataDto(
-                STORAGE_KEY,
-                ORIGINAL_FILENAME,
-                CONTENT_TYPE,
-                FILE_SIZE
-        );
-
-        when(fileMetadataService.getFileMetadata(ID, OWNER_ID))
-                .thenReturn(metadata);
+    void downloadFile_shouldPropagateException_whenStorageFails() {
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.of(METADATA));
 
         when(fileStorageService.getFileStream(STORAGE_KEY))
                 .thenThrow(new FileDownloadException(STORAGE_KEY, new RuntimeException()));
@@ -307,21 +309,27 @@ class FileManagementServiceTest {
 
     @Test
     void getFileDetails_success() {
-        Instant createdTime = Instant.now();
-        FileDetailsDto dto = new FileDetailsDto(ID, ORIGINAL_FILENAME, CONTENT_TYPE, FILE_SIZE, createdTime, createdTime);
+        FileDetailsDto dto = new FileDetailsDto(
+                ID,
+                ORIGINAL_FILENAME,
+                CONTENT_TYPE,
+                FILE_SIZE,
+                METADATA.getCreatedAt(),
+                METADATA.getUpdatedAt()
+        );
 
-        when(fileMetadataService.getFileDetails(ID, OWNER_ID))
-                .thenReturn(dto);
+        when(fileMetadataRepository.findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.of(METADATA));
 
         FileDetailsDto result = fileManagementService.getFileDetails(ID, OWNER_ID);
 
         assertEquals(dto, result);
 
-        verify(fileMetadataService).getFileDetails(ID, OWNER_ID);
+        verify(fileMetadataRepository).findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID);
     }
 
     @Test
-    void getFileDetails_invalidParams() {
+    void getFileDetails_shouldThrowIllegalArgumentException_whenInvalidParams() {
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.getFileDetails(null, OWNER_ID));
 
@@ -330,5 +338,15 @@ class FileManagementServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> fileManagementService.getFileDetails(ID, ""));
+    }
+
+    @Test
+    void getFileDetails_shouldThrowNotFoundException() {
+        when(fileMetadataRepository
+                .findByIdAndOwnerIdAndIsDeletedFalse(ID, OWNER_ID))
+                .thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class,
+                () -> fileManagementService.getFileDetails(ID, OWNER_ID));
     }
 }

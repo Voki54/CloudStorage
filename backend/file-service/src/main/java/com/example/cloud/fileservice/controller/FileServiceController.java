@@ -5,7 +5,6 @@ import com.example.cloud.fileservice.dto.FileDetailsDto;
 import com.example.cloud.fileservice.dto.FileDownloadData;
 import com.example.cloud.fileservice.dto.FileMetadataDto;
 import com.example.cloud.fileservice.dto.UploadResponse;
-import com.example.cloud.fileservice.model.FileMetadata;
 import com.example.cloud.fileservice.service.FileManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -28,17 +27,6 @@ import java.util.UUID;
 public class FileServiceController {
 
     private final FileManagementService fileManagementService;
-
-    @GetMapping("/hello")
-    public String hello(@AuthenticationPrincipal Jwt jwt) {
-        return "Hello, " + jwt.getSubject();
-    }
-
-//    @GetMapping
-//    public ResponseEntity<List<FileMetadataDto>> getFilesMetadata(@AuthenticationPrincipal Jwt jwt
-//    ) {
-//        return ResponseEntity.ok(fileManagementService.getMetadataForAllUserFiles(jwt.getSubject()));
-//    }
 
     @GetMapping
     public ResponseEntity<List<FileMetadataDto>> getFilesMetadataByDirectory(

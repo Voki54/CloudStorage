@@ -24,20 +24,18 @@ public class FileStorageService {
     private final S3Client s3Client;
     private final S3Config config;
 
-//    private final FileMetadataRepository metadataRepository;
-
     @PostConstruct
     public void init() {
         String bucket = config.getBucket();
         try {
             if (bucketExists(bucket)) {
-                log.info("Bucket '{}' already exists", bucket);
+                log.debug("Bucket '{}' already exists", bucket);
                 return;
             }
             s3Client.createBucket(CreateBucketRequest.builder()
                     .bucket(bucket)
                     .build());
-            log.info("Bucket '{}' created successfully", bucket);
+            log.debug("Bucket '{}' created successfully", bucket);
         } catch (S3Exception e) {
             log.error("S3 error for bucket '{}': {} - {}",
                     bucket,
@@ -48,7 +46,7 @@ public class FileStorageService {
             log.error("Unexpected error during bucket initialization for '{}'", bucket, e);
             throw new StorageException("Unexpected error during bucket initialization", e);
         }
-        log.info("S3FileStorageService initialization completed");
+        log.debug("S3FileStorageService initialization completed");
     }
 
     public String uploadFile(MultipartFile file, String originalFilename, String contentType, long fileSize,
@@ -56,7 +54,7 @@ public class FileStorageService {
 
         String key = generateKey(ownerId, originalFilename);
 
-        log.info("Starting file upload: key='{}', size={}, ownerId={}", key, fileSize, ownerId);
+        log.debug("Starting file upload: key='{}', size={}, ownerId={}", key, fileSize, ownerId);
 
         try (InputStream input = file.getInputStream()) {
             long startTime = System.currentTimeMillis();
@@ -68,7 +66,7 @@ public class FileStorageService {
                             .build(),
                     RequestBody.fromInputStream(input, fileSize));
 
-            log.info("File uploaded successfully: key='{}', duration={}ms",
+            log.debug("File uploaded successfully: key='{}', duration={}ms",
                     key, System.currentTimeMillis() - startTime);
             return key;
         } catch (Exception e) {
@@ -103,7 +101,7 @@ public class FileStorageService {
                     .bucket(config.getBucket())
                     .key(key)
                     .build());
-            log.info("File '{}' deleted successfully from S3", key);
+            log.debug("File '{}' deleted successfully from S3", key);
         } catch (S3Exception e) {
             log.error("Failed to delete file from S3. key='{}'", key, e);
             throw new FileDeleteException(key, e);
