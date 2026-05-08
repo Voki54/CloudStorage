@@ -41,6 +41,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
 
   const goToRoot = async () => {
     const root = await getRoot();
+    setHistory([]);
     setCurrentDirectory(root);
   };
 
